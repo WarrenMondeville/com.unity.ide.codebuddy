@@ -1,4 +1,4 @@
-﻿/*---------------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
@@ -17,10 +17,10 @@ using Debug = UnityEngine.Debug;
 
 namespace Microsoft.Unity.VisualStudio.Editor
 {
-	internal class VisualStudioCursorInstallation : VisualStudioInstallation
+	internal class VisualStudioCodeBuddyInstallation : VisualStudioInstallation
 	{
 		private static readonly IGenerator _generator = new SdkStyleProjectGeneration();
-		internal const string ReuseExistingWindowKey = "cursor_reuse_existing_window";
+		internal const string ReuseExistingWindowKey = "codebuddy_reuse_existing_window";
 
 		public override bool SupportsAnalyzers
 		{
@@ -40,13 +40,13 @@ namespace Microsoft.Unity.VisualStudio.Editor
 
 		private string GetExtensionPath()
 		{
-			var vscode = IsPrerelease ? ".vscode-insiders" : ".vscode";
-			var extensionsPath = IOPath.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), vscode, "extensions");
+			var codebuddy = IsPrerelease ? ".codebuddy-insiders" : ".codebuddy";
+			var extensionsPath = IOPath.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), codebuddy, "extensions");
 			if (!Directory.Exists(extensionsPath))
 				return null;
 
 			return Directory
-				.EnumerateDirectories(extensionsPath, $"{MicrosoftUnityExtensionId}*") // publisherid.extensionid
+				.EnumerateDirectories(extensionsPath, MicrosoftUnityExtensionId + "*") // publisherid.extensionid
 				.OrderByDescending(n => n)
 				.FirstOrDefault();
 		}
@@ -71,11 +71,11 @@ namespace Microsoft.Unity.VisualStudio.Editor
 		private static bool IsCandidateForDiscovery(string path)
 		{
 #if UNITY_EDITOR_OSX
-			return Directory.Exists(path) && Regex.IsMatch(path, ".*Cursor.*.app$", RegexOptions.IgnoreCase);
+			return Directory.Exists(path) && Regex.IsMatch(path, @".*CodeBuddy.*\.app$", RegexOptions.IgnoreCase);
 #elif UNITY_EDITOR_WIN
-			return File.Exists(path) && Regex.IsMatch(path, ".*Cursor.*.exe$", RegexOptions.IgnoreCase);
+			return File.Exists(path) && Regex.IsMatch(path, @".*CodeBuddy.*\.exe$", RegexOptions.IgnoreCase);
 #else
-			return File.Exists(path) && path.EndsWith("cursor", StringComparison.OrdinalIgnoreCase);
+			return File.Exists(path) && path.EndsWith("codebuddy", StringComparison.OrdinalIgnoreCase);
 #endif
 		}
 
@@ -112,7 +112,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 #else
 				// on Linux, editorPath is a file, in a bin sub-directory
 				var parent = Directory.GetParent(manifestBase);
-				// but we can link to [vscode]/code or [vscode]/bin/code
+				// but we can link to [codebuddy]/code or [codebuddy]/bin/code
 				manifestBase = parent?.Name == "bin" ? parent.Parent?.FullName : parent?.FullName;
 #endif
 
@@ -133,10 +133,10 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			}
 
 			isPrerelease = isPrerelease || editorPath.ToLower().Contains("insider");
-			installation = new VisualStudioCursorInstallation()
+			installation = new VisualStudioCodeBuddyInstallation()
 			{
 				IsPrerelease = isPrerelease,
-				Name = "Cursor" + (isPrerelease ? " - Insider" : string.Empty) + (version != null ? $" [{version.ToString(3)}]" : string.Empty),
+				Name = "CodeBuddy" + (isPrerelease ? " - Insider" : string.Empty) + (version != null ? $" [{version.ToString(3)}]" : string.Empty),
 				Path = editorPath,
 				Version = version ?? new Version()
 			};
@@ -151,18 +151,19 @@ namespace Microsoft.Unity.VisualStudio.Editor
 #if UNITY_EDITOR_WIN
 			var localAppPath = IOPath.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs");
 			var programFiles = IOPath.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles));
+			var programFilesX86 = IOPath.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86));
 
-			foreach (var basePath in new[] { localAppPath, programFiles }) {
-				candidates.Add(IOPath.Combine(basePath, "cursor", "cursor.exe"));
+			foreach (var basePath in new[] { localAppPath, programFiles, programFilesX86 }) {
+				candidates.Add(IOPath.Combine(basePath, "CodeBuddy", "CodeBuddy.exe"));
 			}
 #elif UNITY_EDITOR_OSX
 			var appPath = IOPath.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles));
-			candidates.AddRange(Directory.EnumerateDirectories(appPath, "Cursor*.app"));
+			candidates.AddRange(Directory.EnumerateDirectories(appPath, "CodeBuddy*.app"));
 #elif UNITY_EDITOR_LINUX
 			// Well known locations
-			candidates.Add("/usr/bin/cursor");
-			candidates.Add("/bin/cursor");
-			candidates.Add("/usr/local/bin/cursor");
+			candidates.Add("/usr/bin/codebuddy");
+			candidates.Add("/bin/codebuddy");
+			candidates.Add("/usr/local/bin/codebuddy");
 
 			// Preference ordered base directories relative to which desktop files should be searched
 			candidates.AddRange(GetXdgCandidates());
@@ -191,7 +192,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 
 				try
 				{
-					var desktopFile = IOPath.Combine(dir, "applications/code.desktop");
+					var desktopFile = IOPath.Combine(dir, "applications/codebuddy.desktop");
 					if (!File.Exists(desktopFile))
 						continue;
 
@@ -234,14 +235,14 @@ namespace Microsoft.Unity.VisualStudio.Editor
 		{
 			try
 			{
-				var vscodeDirectory = IOPath.Combine(projectDirectory.NormalizePathSeparators(), ".vscode");
-				Directory.CreateDirectory(vscodeDirectory);
+				var codebuddyDirectory = IOPath.Combine(projectDirectory.NormalizePathSeparators(), ".codebuddy");
+				Directory.CreateDirectory(codebuddyDirectory);
 
-				var enablePatch = !File.Exists(IOPath.Combine(vscodeDirectory, ".vstupatchdisable"));
+				var enablePatch = !File.Exists(IOPath.Combine(codebuddyDirectory, ".vstupatchdisable"));
 
-				CreateRecommendedExtensionsFile(vscodeDirectory, enablePatch);
-				CreateSettingsFile(vscodeDirectory, enablePatch);
-				CreateLaunchFile(vscodeDirectory, enablePatch);
+				CreateRecommendedExtensionsFile(codebuddyDirectory, enablePatch);
+				CreateSettingsFile(codebuddyDirectory, enablePatch);
+				CreateLaunchFile(codebuddyDirectory, enablePatch);
 			}
 			catch (IOException)
 			{
@@ -259,9 +260,9 @@ namespace Microsoft.Unity.VisualStudio.Editor
      ]
 }";
 
-		private static void CreateLaunchFile(string vscodeDirectory, bool enablePatch)
+		private static void CreateLaunchFile(string codebuddyDirectory, bool enablePatch)
 		{
-			var launchFile = IOPath.Combine(vscodeDirectory, "launch.json");
+			var launchFile = IOPath.Combine(codebuddyDirectory, "launch.json");
 			if (File.Exists(launchFile))
 			{
 				if (enablePatch)
@@ -304,9 +305,9 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			}
 		}
 
-		private void CreateSettingsFile(string vscodeDirectory, bool enablePatch)
+		private void CreateSettingsFile(string codebuddyDirectory, bool enablePatch)
 		{
-			var settingsFile = IOPath.Combine(vscodeDirectory, "settings.json");
+			var settingsFile = IOPath.Combine(codebuddyDirectory, "settings.json");
 			if (File.Exists(settingsFile))
 			{
 				if (enablePatch)
@@ -374,7 +375,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
     }";
 
 			var content = @"{
-" + excludes + @",
+:" + excludes + @",
     ""dotnet.defaultSolution"": """ + IOPath.GetFileName(ProjectGenerator.SolutionFile()) + @"""
 }";
 
@@ -447,10 +448,10 @@ namespace Microsoft.Unity.VisualStudio.Editor
 }
 ";
 
-		private static void CreateRecommendedExtensionsFile(string vscodeDirectory, bool enablePatch)
+		private static void CreateRecommendedExtensionsFile(string codebuddyDirectory, bool enablePatch)
 		{
 			// see https://tattoocoder.com/recommending-vscode-extensions-within-your-open-source-projects/
-			var extensionFile = IOPath.Combine(vscodeDirectory, "extensions.json");
+			var extensionFile = IOPath.Combine(codebuddyDirectory, "extensions.json");
 			if (File.Exists(extensionFile))
 			{
 				if (enablePatch)
@@ -500,7 +501,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			}
 		}
 
-		private Process FindRunningCursorWithSolution(string solutionPath)
+		private Process FindRunningCodeBuddyWithSolution(string solutionPath)
 		{
 			var normalizedTargetPath = solutionPath.Replace('\\', '/').TrimEnd('/').ToLowerInvariant();
 
@@ -518,13 +519,13 @@ namespace Microsoft.Unity.VisualStudio.Editor
 
 			// Get process name list based on different operating systems
 #if UNITY_EDITOR_OSX
-			processes.AddRange(Process.GetProcessesByName("Cursor"));
-			processes.AddRange(Process.GetProcessesByName("Cursor Helper"));
+			processes.AddRange(Process.GetProcessesByName("CodeBuddy"));
+			processes.AddRange(Process.GetProcessesByName("CodeBuddy Helper"));
 #elif UNITY_EDITOR_LINUX
-			processes.AddRange(Process.GetProcessesByName("cursor"));
-			processes.AddRange(Process.GetProcessesByName("Cursor"));
+			processes.AddRange(Process.GetProcessesByName("codebuddy"));
+			processes.AddRange(Process.GetProcessesByName("CodeBuddy"));
 #else
-			processes.AddRange(Process.GetProcessesByName("cursor"));
+			processes.AddRange(Process.GetProcessesByName("CodeBuddy"));
 #endif
 
 			foreach (var process in processes)
@@ -559,7 +560,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 				}
 				catch (Exception ex)
 				{
-					Debug.LogError($"[Cursor] Error checking process: {ex}");
+					Debug.LogError($"[CodeBuddy] Error checking process: {ex}");
 					continue;
 				}
 			}
@@ -594,7 +595,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 
 			if (EditorPrefs.GetBool(ReuseExistingWindowKey, false))
 			{
-				var existingProcess = FindRunningCursorWithSolution(directory);
+				var existingProcess = FindRunningCodeBuddyWithSolution(directory);
 				if (existingProcess != null)
 				{
 					try
@@ -608,7 +609,7 @@ namespace Microsoft.Unity.VisualStudio.Editor
 					}
 					catch (Exception ex)
 					{
-						Debug.LogError($"[Cursor] Error using existing instance: {ex}");
+						Debug.LogError($"[CodeBuddy] Error using existing instance: {ex}");
 					}
 				}
 			}

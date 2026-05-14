@@ -116,28 +116,28 @@ namespace Microsoft.Unity.VisualStudio.Editor
 			sb?.Append(data);
 		}
 
-		public static string[] GetProcessWorkspaces(Process process)
+	public static string[] GetProcessWorkspaces(Process process)
 		{
 			if (process == null)
 				return null;
 
 			try
-			{
+		{
 				var workspaces = new List<string>();
 				var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-				string cursorStoragePath;
+				string codeBuddyStoragePath;
 
 #if UNITY_EDITOR_OSX
-				cursorStoragePath = Path.Combine(userProfile, "Library", "Application Support", "cursor", "User", "workspaceStorage");
+				codeBuddyStoragePath = Path.Combine(userProfile, "Library", "Application Support", "CodeBuddy", "User", "workspaceStorage");
 #elif UNITY_EDITOR_LINUX
-				cursorStoragePath = Path.Combine(userProfile, ".config", "Cursor", "User", "workspaceStorage");
+				codeBuddyStoragePath = Path.Combine(userProfile, ".config", "CodeBuddy", "User", "workspaceStorage");
 #else
-				cursorStoragePath = Path.Combine(userProfile, "AppData", "Roaming", "cursor", "User", "workspaceStorage");
+				codeBuddyStoragePath = Path.Combine(userProfile, "AppData", "Roaming", "CodeBuddy", "User", "workspaceStorage");
 #endif
 				
-				if (Directory.Exists(cursorStoragePath))
+				if (Directory.Exists(codeBuddyStoragePath))
 				{
-					foreach (var workspaceDir in Directory.GetDirectories(cursorStoragePath))
+					foreach (var workspaceDir in Directory.GetDirectories(codeBuddyStoragePath))
 					{
 						try
 						{
@@ -189,21 +189,21 @@ namespace Microsoft.Unity.VisualStudio.Editor
 						}
 						catch (Exception ex)
 						{
-							Debug.LogWarning($"[Cursor] Error reading workspace state file: {ex.Message}");
+							Debug.LogWarning($"[CodeBuddy] Error reading workspace state file: {ex.Message}");
 							continue;
 						}
 					}
 				}
 				else
 				{
-					Debug.LogWarning($"[Cursor] Workspace storage directory not found: {cursorStoragePath}");
+					Debug.LogWarning($"[CodeBuddy] Workspace storage directory not found: {codeBuddyStoragePath}");
 				}
 
 				return workspaces.Distinct().ToArray();
 			}
 			catch (Exception ex)
 			{
-				Debug.LogError($"[Cursor] Error getting workspace directory: {ex.Message}");
+				Debug.LogError($"[CodeBuddy] Error getting workspace directory: {ex.Message}");
 				return null;
 			}
 		}

@@ -1,14 +1,13 @@
 {
-  "name": "com.boxqkrtm.ide.cursor",
-  "displayName": "Cursor Editor",
-  "description": "Cursor editor integration for supporting Cursor as code editor for unity. Adds support for generating csproj files for intellisense purposes, auto discovery of installations, etc.",
+  "name": "com.boxqkrtm.ide.codebuddy",
+  "displayName": "CodeBuddy CN Editor",
+  "description": "CodeBuddy CN editor integration for Unity. Supports generating csproj files for IntelliSense, auto discovery of installations, debugging, and more.",
   "version": "2.0.28",
   "unity": "2019.4",
-  "unityRelease": "25f1",
   "dependencies": {
-    "com.unity.test-framework": "1.1.9"
+    "com.unity.test-framework": "1.1.33"
   },
   "_upm": {
-    "changelog": "Integration:\n\n- Add Multiple or Single Cursor Instance Options"
+    "changelog": "Integration:\n\n- Adapted for CodeBuddy CN editor\n- Add Multiple or Single CodeBuddy Instance Options"
   }
 }
